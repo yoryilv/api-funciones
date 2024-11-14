@@ -1,0 +1,76 @@
+org: jorgeleandro
+service: api-funciones
+
+provider:
+  name: aws
+  runtime: python3.12
+  memorySize: 1024
+  timeout: 30
+  iam:
+    role: arn:aws:iam::606646193182:role/LabRole
+  environment:
+    TABLE_NAME_FUNCIONES: ${sls:stage}-t_funciones
+    TABLE_NAME_USUARIOS: ${sls:stage}-t_usuarios
+
+functions:
+  # Función para agregar una función
+  addFuncion:
+    handler: addFuncion.lambda_handler
+    events:
+      - http:
+          path: /funcion/agregar
+          method: post
+          cors: true
+          integration: lambda
+
+  # Función para actualizar una función
+  updateFuncion:
+    handler: updateFuncion.lambda_handler
+    events:
+      - http:
+          path: /funcion/actualizar
+          method: put
+          cors: true
+          integration: lambda
+
+  # Función para eliminar una función
+  deleteFuncion:
+    handler: deleteFuncion.lambda_handler
+    events:
+      - http:
+          path: /funcion/eliminar
+          method: delete
+          cors: true
+          integration: lambda
+
+resources:
+  Resources:
+    # Tabla de Funciones de Cine
+    FuncionesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TABLE_NAME_FUNCIONES}
+        AttributeDefinitions:
+          - AttributeName: "cinema_id"
+            AttributeType: "S"
+          - AttributeName: "show_id"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "cinema_id"
+            KeyType: "HASH"
+          - AttributeName: "show_id"
+            KeyType: "RANGE"
+        BillingMode: PAY_PER_REQUEST
+
+    # Tabla de Usuarios (para validar permisos)
+    UsuariosTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TABLE_NAME_USUARIOS}
+        AttributeDefinitions:
+          - AttributeName: "user_id"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "user_id"
+            KeyType: "HASH"
+        BillingMode: PAY_PER_REQUEST
